@@ -5,7 +5,7 @@ import datetime as d
 import numpy as np
 #This is your zillow api key
 #if you don't have one, sign up at http://www.zillow.com/howto/api/APIOverview.htm
-zillow_data = ZillowWrapper('insertZillowAPIKey')
+zillow_data = ZillowWrapper('zillowAPIKey')
 dfResults = pd.DataFrame({  'zillow_id':[],
                             'home_type':[],
                             'home_detail_link':[],
@@ -236,20 +236,26 @@ for i in ppd:
         dfResults = dfResults.append(dfResultsToAppend)
     except:
         print address
+def floatConversion(x):
+    if x is None:
+        return None
+    else:
+        return float(x)
 dfResults['last_sold_date'] = dfResults['last_sold_date'].apply(lambda x: d.datetime.strptime(x,'%m/%d/%Y').date())
-dfResults['property_size'] = dfResults['property_size'].apply(lambda x: int(x))
-dfResults['last_sold_price'] = dfResults['last_sold_price'].apply(lambda x: int(x))
-dfResults['year_built'] = dfResults['year_built'].apply(lambda x: int(x))
-dfResults['home_size'] = dfResults['home_size'].apply(lambda x: int(x))
-dfResults['bathrooms'] = dfResults['bathrooms'].apply(lambda x: float(x))
-dfResults['bedrooms'] = dfResults['bedrooms'].apply(lambda x: float(x))
+dfResults['property_size'] = dfResults['property_size'].apply(lambda x: floatConversion(x))
+dfResults['last_sold_price'] = dfResults['last_sold_price'].apply(lambda x: floatConversion(x))
+dfResults['year_built'] = dfResults['year_built'].apply(lambda x: floatConversion(x))
+dfResults['home_size'] = dfResults['home_size'].apply(lambda x: floatConversion(x))
+dfResults['bathrooms'] = dfResults['bathrooms'].apply(lambda x: floatConversion(x))
+dfResults['bedrooms'] = dfResults['bedrooms'].apply(lambda x: floatConversion(x))
+dfResults = dfResults.dropna(subset=['property_size', 'last_sold_price', 'year_built','home_size','bathrooms','bedrooms'], how='any')
 dfResults = dfResults.sort('last_sold_date', axis=0, ascending=True, na_position='first')
 dfResults=dfResults.set_index([range(len(dfResults.index))])
 dfResultsBathroomCount = dfResults[['bathrooms','bedrooms']].groupby(['bathrooms']).count()
 dfResultsBathroomCount.columns = [['bathroomCount']]
 dfResultsBedroomCount = dfResults[['bathrooms','bedrooms']].groupby(['bedrooms']).count()
 dfResultsBedroomCount.columns = [['bedroomCount']]
-bins=int(round(len(dfResults['home_size'])/5.0,0))
+bins=int(round(np.sqrt(len(dfResults['home_size'])),0))
 dfResultsHomeSize = np.histogram(np.array(dfResults['home_size']), bins, range=None, normed=False, weights=None, density=None)
 a = []
 i=0
